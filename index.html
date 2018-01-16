@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <title>JavaScript RSA Encryption</title>
+    <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+    <script src="js/jsencrypt.js"></script>
+    <script src="js/aes.js"></script>
+    <script src="js/pbkdf2.js"></script>
+
+    <script type="text/javascript">
+      var getKeyAndIV = function(password) {
+        var keyBitLength = 256;
+        var ivBitLength = 128;
+        var iterations = 234;
+        var bytesInSalt = 128 / 8;
+        var salt = CryptoJS.lib.WordArray.random(bytesInSalt);
+        var iv128Bits = CryptoJS.PBKDF2(password, salt, { keySize: 128 / 32, iterations: iterations });
+        var key256Bits = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: iterations });
+        return {iv: iv128Bits,key: key256Bits};
+      };
+
+      $(function() {
+        var pass = "random"
+
+        $('#clickme').click(function() {
+          var json = $.trim($('#objData').val());
+          try {
+            JSON.parse(json);
+          } catch(err) {
+            alert(err.message);
+            return;
+          }
+
+          var skey = getKeyAndIV(pass);
+          var aesEncrypted = CryptoJS.AES.encrypt(json, skey.key, { iv: skey.iv }); 
+          var aesKey = aesEncrypted.key + ":::" + aesEncrypted.iv;
+          var encryptedMessage = aesEncrypted.toString();
+
+          var rsaEncrypt = new JSEncrypt();
+          rsaEncrypt.setPublicKey($('#pubkey').val());
+          var encryptedKey = rsaEncrypt.encrypt(aesKey);
+          var payload = encryptedKey + ":::" + encryptedMessage;
+         
+          $.ajax({
+            method: "POST",
+            url : 'http://127.0.0.1:8080/fund/v3/tasks',
+            crossDomain: 'true',
+            data: payload,
+            cache: false,
+            contentType:'text/plain',
+            beforeSend: function (xhr) {
+              xhr.setRequestHeader("Authorization", "Bearer 12345678");
+            },
+            success: function(responseData, textStatus, jqXHR) {
+              var value = responseData.someKey;
+            },
+            error: function (responseData, textStatus, errorThrown) {
+              alert('POST failed.');
+            }
+          })
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <label for="pubkey">Public Key</label><br/>
+    <textarea id="pubkey" rows="15" cols="65">-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3HtiMsptUafhgMNwq6tj
+fhNfFQtwb+F/rNb9eNTkhP8H5/Fw5vdSARQW3ctHTw4YLtMGt2r6zjEzUyytxgre
+UG2AqSGdy7acUHS+/rHikxAMa9kAqsIcXqzbFLPeSjStDUCYyVefFVymLA2QL4ks
+HoyDx+yMk/pv/ASHgFNk7zgYsctVEwws248GjRrotgDjrRJddFGll7hLDCaxOUDG
+BMsZgpc6YBaohyQpSwoswOe4ukk2a2DQeJqWP/uR4iqQvk1GlF3EMr0ZxBom7BdU
+hMOrv7Kh8Iu71qrCKP+Lh87qYzfSI2o+VeU9H/VTl/D6HZavAfMkzIZcrcE0UAF/
+GQIDAQAB
+-----END PUBLIC KEY-----</textarea><br/>
+    
+   <label for="objData">JSON Content</label><br/>
+   <textarea id="objData" rows="15" cols="65">{"a":1,"b":2,"c":3,"d":"4"}
+   </textarea><br/>
+  <input id="clickme" type="button" value="Click me" /><br/>
+  </body>
+</html>
