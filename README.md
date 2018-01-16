@@ -12,3 +12,9 @@
    openssl pkcs8 -topk8 -nocrypt -in  rsa_2048_priv.pem -out rsa_2048_priv.p8
 
    edit the ouput file "rsa_2048_priv.p8", remove first & last line, concatenate the left lines and save to db as private key
+    
+   if the serverside written by JAVA
+
+
+Reference:
+https://medium.com/@tikiatua/symmetric-and-asymmetric-encryption-with-javascript-and-go-240043e56daf
