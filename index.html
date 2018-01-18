@@ -42,7 +42,7 @@
           var payload = encryptedKey + ":::" + encryptedMessage;
          
           $.ajax({
-            method: "POST",
+            type: "POST",
             url : 'http://127.0.0.1:8080/fund/v3/tasks',
             crossDomain: 'true',
             data: payload,
